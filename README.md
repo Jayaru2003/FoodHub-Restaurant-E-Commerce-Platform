@@ -1,2 +1,7 @@
-# FoodHub-Restaurant-E-Commerce-Platform
+# -FoodHub---Restaurant-E-Commerce-Platform
 Full-stack responsive restaurant e-commerce platform with customer ordering, admin management, PayHere Sandbox payment, WhatsApp ordering, authentication, and inventory management.
+
+## Project structure
+
+- `backend/` - Spring Boot API, persistence layer, configuration, and backend environment files
+- `frontend/` - Frontend application workspace
