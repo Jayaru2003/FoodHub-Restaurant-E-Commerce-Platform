@@ -68,6 +68,14 @@ export default function Navbar() {
 
   // Cart count from context (stub — replace with real data later)
   const { cartCount } = useCart();
+  const [badgeBump, setBadgeBump] = useState(false);
+
+  useEffect(() => {
+    if (cartCount === 0) return;
+    setBadgeBump(true);
+    const timer = setTimeout(() => setBadgeBump(false), 300);
+    return () => clearTimeout(timer);
+  }, [cartCount]);
 
   /* ── scroll shadow ─────────────────────────────────────── */
   useEffect(() => {
@@ -214,7 +222,7 @@ export default function Navbar() {
                 <IconCart />
               </Link>
               {cartCount > 0 && (
-                <span className="fh-cart__badge" aria-hidden="true">
+                <span className={`fh-cart__badge${badgeBump ? ' fh-cart__badge--bump' : ''}`} aria-hidden="true">
                   {cartCount > 99 ? '99+' : cartCount}
                 </span>
               )}

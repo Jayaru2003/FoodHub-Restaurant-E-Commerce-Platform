@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import CartToast from '../components/CartToast';
 import { CartProvider } from '../context/CartContext';
 
 export default function MainLayout() {
@@ -12,7 +13,9 @@ export default function MainLayout() {
           <Outlet />
         </main>
         <Footer />
+        <CartToast />
       </div>
     </CartProvider>
   );
 }
+
