@@ -1,6 +1,7 @@
 package com.foodhub.entity;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -43,6 +44,7 @@ public class User {
 
     @NotBlank
     @Size(max = 255)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 

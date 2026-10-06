@@ -19,10 +19,12 @@ import java.util.Locale;
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     @Transactional
@@ -55,7 +57,7 @@ public class AuthService {
             throw new InvalidCredentialsException();
         }
 
-        return AuthResponse.from(user, "Login successful");
+        return AuthResponse.from(user, jwtService.generateToken(user), "Login successful");
     }
 
     private String normalizeEmail(String email) {
