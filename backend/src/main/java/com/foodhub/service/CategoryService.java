@@ -26,13 +26,14 @@ public class CategoryService {
     @Transactional(readOnly = true)
     public List<CategoryResponse> findCategories() {
         return categoryRepository.findAll().stream()
-                .map(CategoryResponse::from)
+                .map(cat -> CategoryResponse.from(cat, productRepository.countByCategoryId(cat.getId())))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public CategoryResponse findCategory(Long id) {
-        return CategoryResponse.from(findCategoryEntity(id));
+        Category cat = findCategoryEntity(id);
+        return CategoryResponse.from(cat, productRepository.countByCategoryId(cat.getId()));
     }
 
     @Transactional
@@ -42,7 +43,8 @@ public class CategoryService {
 
         Category category = new Category();
         apply(request, category, name);
-        return CategoryResponse.from(categoryRepository.save(category));
+        Category saved = categoryRepository.save(category);
+        return CategoryResponse.from(saved, 0L);
     }
 
     @Transactional
@@ -52,7 +54,8 @@ public class CategoryService {
         ensureNameAvailable(name, id);
 
         apply(request, category, name);
-        return CategoryResponse.from(categoryRepository.save(category));
+        Category saved = categoryRepository.save(category);
+        return CategoryResponse.from(saved, productRepository.countByCategoryId(saved.getId()));
     }
 
     @Transactional

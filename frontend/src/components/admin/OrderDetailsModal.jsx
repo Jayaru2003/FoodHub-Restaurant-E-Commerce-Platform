@@ -150,8 +150,8 @@ export default function OrderDetailsModal({ isOpen, onClose, order, onUpdateStat
             </h4>
             {order.address ? (
               <div className="mt-1 text-xs font-medium text-slate-700">
-                <p>{order.address.street}</p>
-                <p>{order.address.city}, {order.address.state || ''} {order.address.zipCode || ''}</p>
+                <p>{order.address.addressLine || order.address.street}</p>
+                <p>{order.address.city}{order.address.postalCode || order.address.zipCode ? `, ${order.address.postalCode || order.address.zipCode}` : ''}</p>
               </div>
             ) : (
               <p className="mt-1 text-xs text-slate-500 italic">No address recorded</p>
@@ -173,26 +173,33 @@ export default function OrderDetailsModal({ isOpen, onClose, order, onUpdateStat
 
           <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200">
             {order.items && order.items.length > 0 ? (
-              order.items.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3.5 bg-white hover:bg-slate-50">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-600">
-                      {item.quantity}x
-                    </span>
-                    <div>
-                      <p className="text-sm font-bold text-slate-800">
-                        {item.productName || `Product #${item.productId}`}
-                      </p>
-                      <p className="text-xs font-medium text-slate-500">
-                        ${Number(item.price || 0).toFixed(2)} each
-                      </p>
+              order.items.map((item, idx) => {
+                const uPrice = Number(item.unitPrice ?? item.price ?? 0);
+                const subTot = item.subtotal !== undefined && item.subtotal !== null
+                  ? Number(item.subtotal)
+                  : uPrice * (item.quantity || 1);
+
+                return (
+                  <div key={idx} className="flex items-center justify-between p-3.5 bg-white hover:bg-slate-50">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-600">
+                        {item.quantity}x
+                      </span>
+                      <div>
+                        <p className="text-sm font-bold text-slate-800">
+                          {item.productName || `Product #${item.productId}`}
+                        </p>
+                        <p className="text-xs font-medium text-slate-500">
+                          ${uPrice.toFixed(2)} each
+                        </p>
+                      </div>
                     </div>
+                    <span className="text-sm font-extrabold text-slate-900">
+                      ${subTot.toFixed(2)}
+                    </span>
                   </div>
-                  <span className="text-sm font-extrabold text-slate-900">
-                    ${(Number(item.price || 0) * (item.quantity || 1)).toFixed(2)}
-                  </span>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="p-4 text-center text-xs text-slate-500">
                 No item breakdown available.

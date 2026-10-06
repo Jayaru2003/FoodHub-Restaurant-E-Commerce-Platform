@@ -14,6 +14,8 @@ import jakarta.persistence.LockModeType;
 public interface ProductRepository extends JpaRepository<Product, Long> {
     boolean existsByCategoryId(Long categoryId);
 
+    long countByCategoryId(Long categoryId);
+
     @Query(value = """
             select p from Product p
             join fetch p.category c
