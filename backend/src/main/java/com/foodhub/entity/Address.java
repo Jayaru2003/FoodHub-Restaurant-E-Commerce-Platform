@@ -65,7 +65,14 @@ public class Address {
         updatedAt = LocalDateTime.now();
     }
 
-    protected Address() {
+    public Address() {
+    }
+
+    public Address(User user, String addressLine, String city, String postalCode) {
+        this.user = user;
+        this.addressLine = addressLine;
+        this.city = city;
+        this.postalCode = postalCode;
     }
 
     public Long getId() {
