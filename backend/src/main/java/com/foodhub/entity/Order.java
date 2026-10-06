@@ -105,7 +105,7 @@ public class Order {
         updatedAt = LocalDateTime.now();
     }
 
-    protected Order() {
+    public Order() {
     }
 
     public Long getId() {

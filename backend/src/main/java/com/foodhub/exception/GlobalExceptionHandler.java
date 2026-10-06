@@ -12,7 +12,11 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    @ExceptionHandler({ProductNotFoundException.class, CategoryNotFoundException.class})
+    @ExceptionHandler({
+            ProductNotFoundException.class,
+            CategoryNotFoundException.class,
+            OrderNotFoundException.class,
+            AddressNotFoundException.class})
     public ResponseEntity<Map<String, Object>> handleNotFound(RuntimeException exception) {
         return error(HttpStatus.NOT_FOUND, exception.getMessage());
     }
@@ -25,6 +29,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CategoryHasProductsException.class)
     public ResponseEntity<Map<String, Object>> handleCategoryWithProducts(CategoryHasProductsException exception) {
         return error(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    @ExceptionHandler(InvalidOrderException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidOrder(InvalidOrderException exception) {
+        return error(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
