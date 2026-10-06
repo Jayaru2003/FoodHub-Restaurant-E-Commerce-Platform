@@ -60,7 +60,7 @@ public class Category {
         updatedAt = LocalDateTime.now();
     }
 
-    protected Category() {
+    public Category() {
     }
 
     public Long getId() {
