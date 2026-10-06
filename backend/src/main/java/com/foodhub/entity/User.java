@@ -78,7 +78,7 @@ public class User {
         updatedAt = LocalDateTime.now();
     }
 
-    protected User() {
+    public User() {
     }
 
     public Long getId() {
