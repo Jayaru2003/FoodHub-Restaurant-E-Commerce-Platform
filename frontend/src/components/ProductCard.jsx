@@ -17,22 +17,20 @@ function formatPrice(price) {
  * Used on: HomePage (featured section), ProductsPage (grid)
  */
 export default function ProductCard({ product }) {
-  const { setCartItems } = useCart();
+  const { addToCart } = useCart();
   const navigate = useNavigate();
+  const [isAdded, setIsAdded] = useState(false);
 
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setCartItems((prev) => {
-      const existing = prev.find((i) => i.id === product.id);
-      if (existing) {
-        return prev.map((i) =>
-          i.id === product.id ? { ...i, quantity: (i.quantity ?? 1) + 1 } : i
-        );
-      }
-      return [...prev, { ...product, quantity: 1 }];
-    });
+    const result = addToCart(product, 1);
+    if (result?.success) {
+      setIsAdded(true);
+      setTimeout(() => setIsAdded(false), 1200);
+    }
   };
+
 
   const handleViewDetails = (e) => {
     e.preventDefault();
@@ -96,9 +94,15 @@ export default function ProductCard({ product }) {
             aria-label={`Add ${product.name} to cart`}
           >
             {product.available ? (
-              <>
-                <span aria-hidden="true">+</span> Add to Cart
-              </>
+              isAdded ? (
+                <>
+                  <span aria-hidden="true">✓</span> Added!
+                </>
+              ) : (
+                <>
+                  <span aria-hidden="true">+</span> Add to Cart
+                </>
+              )
             ) : (
               'Unavailable'
             )}
