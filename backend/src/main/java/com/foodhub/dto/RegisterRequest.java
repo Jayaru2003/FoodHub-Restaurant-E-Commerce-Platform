@@ -1,4 +1,4 @@
-package com.foodhub.auth.dto;
+package com.foodhub.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

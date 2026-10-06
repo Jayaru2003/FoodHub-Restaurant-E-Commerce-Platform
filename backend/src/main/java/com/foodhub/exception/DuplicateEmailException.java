@@ -1,4 +1,4 @@
-package com.foodhub.auth.exception;
+package com.foodhub.exception;
 
 public class DuplicateEmailException extends RuntimeException {
     public DuplicateEmailException(String email) {

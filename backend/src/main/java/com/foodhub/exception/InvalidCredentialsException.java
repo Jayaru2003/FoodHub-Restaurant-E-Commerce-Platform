@@ -1,4 +1,4 @@
-package com.foodhub.auth.exception;
+package com.foodhub.exception;
 
 public class InvalidCredentialsException extends RuntimeException {
     public InvalidCredentialsException() {

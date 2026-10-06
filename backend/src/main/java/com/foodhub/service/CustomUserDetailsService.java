@@ -1,4 +1,4 @@
-package com.foodhub.auth;
+package com.foodhub.service;
 
 import com.foodhub.entity.User;
 import com.foodhub.repository.UserRepository;

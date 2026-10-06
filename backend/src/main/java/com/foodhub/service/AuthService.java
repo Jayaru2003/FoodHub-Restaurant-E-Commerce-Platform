@@ -1,10 +1,10 @@
-package com.foodhub.auth;
+package com.foodhub.service;
 
-import com.foodhub.auth.dto.AuthResponse;
-import com.foodhub.auth.dto.LoginRequest;
-import com.foodhub.auth.dto.RegisterRequest;
-import com.foodhub.auth.exception.DuplicateEmailException;
-import com.foodhub.auth.exception.InvalidCredentialsException;
+import com.foodhub.dto.AuthResponse;
+import com.foodhub.dto.LoginRequest;
+import com.foodhub.dto.RegisterRequest;
+import com.foodhub.exception.DuplicateEmailException;
+import com.foodhub.exception.InvalidCredentialsException;
 import com.foodhub.entity.Role;
 import com.foodhub.entity.User;
 import com.foodhub.repository.UserRepository;

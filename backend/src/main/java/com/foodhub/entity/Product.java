@@ -78,7 +78,7 @@ public class Product {
         updatedAt = LocalDateTime.now();
     }
 
-    protected Product() {
+    public Product() {
     }
 
     public Long getId() {

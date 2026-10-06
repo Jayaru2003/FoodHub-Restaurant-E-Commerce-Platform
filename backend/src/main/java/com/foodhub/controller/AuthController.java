@@ -1,8 +1,9 @@
-package com.foodhub.auth;
+package com.foodhub.controller;
 
-import com.foodhub.auth.dto.AuthResponse;
-import com.foodhub.auth.dto.LoginRequest;
-import com.foodhub.auth.dto.RegisterRequest;
+import com.foodhub.dto.AuthResponse;
+import com.foodhub.dto.LoginRequest;
+import com.foodhub.dto.RegisterRequest;
+import com.foodhub.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

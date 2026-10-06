@@ -1,4 +1,4 @@
-package com.foodhub.auth.dto;
+package com.foodhub.dto;
 
 import com.foodhub.entity.Role;
 import com.foodhub.entity.User;
