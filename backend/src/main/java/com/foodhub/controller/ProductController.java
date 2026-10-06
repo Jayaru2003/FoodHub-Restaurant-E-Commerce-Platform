@@ -1,9 +1,12 @@
 package com.foodhub.controller;
 
 import com.foodhub.dto.ProductRequest;
+import com.foodhub.dto.ProductPageResponse;
 import com.foodhub.dto.ProductResponse;
 import com.foodhub.service.ProductService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,10 +18,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
+import org.springframework.validation.annotation.Validated;
 
 @RestController
+@Validated
 @RequestMapping("/api/products")
 public class ProductController {
     private final ProductService productService;
@@ -28,11 +31,16 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductResponse>> getProducts(
-            @RequestParam(required = false) String name,
+    public ResponseEntity<ProductPageResponse> getProducts(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size,
+            @RequestParam(required = false) String search,
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Boolean available) {
-        return ResponseEntity.ok(productService.findProducts(name, categoryId, available));
+            @RequestParam(required = false) Boolean available,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+        return ResponseEntity.ok(productService.findProducts(
+                page, size, search, categoryId, available, sortBy, direction));
     }
 
     @GetMapping("/{id}")

@@ -17,6 +17,16 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 
+    @ExceptionHandler(CategoryNameAlreadyExistsException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicateCategory(CategoryNameAlreadyExistsException exception) {
+        return error(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    @ExceptionHandler(CategoryHasProductsException.class)
+    public ResponseEntity<Map<String, Object>> handleCategoryWithProducts(CategoryHasProductsException exception) {
+        return error(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException exception) {
         Map<String, String> fields = new LinkedHashMap<>();
