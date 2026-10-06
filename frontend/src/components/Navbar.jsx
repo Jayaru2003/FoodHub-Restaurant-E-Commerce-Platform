@@ -233,6 +233,14 @@ export default function Navbar() {
             {/* Account / Sign In */}
             {isAuthenticated ? (
               <div className="fh-user-menu flex items-center gap-2">
+                {user?.role === 'ADMIN' && (
+                  <Link
+                    to="/admin"
+                    className="rounded-lg bg-orange-100 px-2.5 py-1.5 text-xs font-bold text-orange-700 hover:bg-orange-200 transition flex items-center gap-1"
+                  >
+                    ⚡ Admin Panel
+                  </Link>
+                )}
                 <span className="text-sm font-semibold text-slate-800">
                   👤 {user?.name ? user.name.split(' ')[0] : 'Account'}
                 </span>
@@ -355,17 +363,29 @@ export default function Navbar() {
 
           {/* Mobile Sign In / Logout */}
           {isAuthenticated ? (
-            <button
-              type="button"
-              className="fh-drawer__signin"
-              style={{ background: '#f1f5f9', color: '#334155' }}
-              onClick={() => {
-                logout();
-                closeMobileMenu();
-              }}
-            >
-              Logout ({user?.name ? user.name.split(' ')[0] : 'User'})
-            </button>
+            <div className="space-y-2">
+              {user?.role === 'ADMIN' && (
+                <Link
+                  to="/admin"
+                  className="fh-drawer__signin"
+                  style={{ background: '#ffedf0', color: '#ea580c', border: '1px solid #ffedd5' }}
+                  onClick={closeMobileMenu}
+                >
+                  ⚡ Admin Panel
+                </Link>
+              )}
+              <button
+                type="button"
+                className="fh-drawer__signin"
+                style={{ background: '#f1f5f9', color: '#334155' }}
+                onClick={() => {
+                  logout();
+                  closeMobileMenu();
+                }}
+              >
+                Logout ({user?.name ? user.name.split(' ')[0] : 'User'})
+              </button>
+            </div>
           ) : (
             <Link
               to="/login"
