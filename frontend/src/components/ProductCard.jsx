@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import './ProductCard.css';
 import { useCart } from '../context/CartContext';
 
+import { getProductImage, getFallbackImage } from '../utils/imageUtils';
+
 function formatPrice(price) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(price));
 }
@@ -31,29 +33,31 @@ export default function ProductCard({ product }) {
     }
   };
 
-
   const handleViewDetails = (e) => {
     e.preventDefault();
     navigate(`/products/${product.id}`);
   };
 
-  const [imgError, setImgError] = useState(false);
+  const [imgSrc, setImgSrc] = useState(() => getProductImage(product));
+
+  const handleImageError = () => {
+    const fallback = getFallbackImage(product);
+    if (imgSrc !== fallback) {
+      setImgSrc(fallback);
+    }
+  };
 
   return (
     <article className="fh-product-card group">
       {/* Image */}
       <div className="fh-product-card__img-wrap">
-        {product.imageUrl && !imgError ? (
-          <img
-            src={product.imageUrl}
-            alt={product.name}
-            className="fh-product-card__img"
-            loading="lazy"
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <div className="fh-product-card__img-placeholder" aria-hidden="true">🍽️</div>
-        )}
+        <img
+          src={imgSrc}
+          alt={product.name}
+          className="fh-product-card__img"
+          loading="lazy"
+          onError={handleImageError}
+        />
 
         {/* Availability badge */}
         <span

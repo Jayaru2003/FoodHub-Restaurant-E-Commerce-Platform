@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import './CartPage.css';
+import { getProductImage, getFallbackImage } from '../utils/imageUtils';
 
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(amount) || 0);
@@ -37,10 +38,10 @@ export default function CartPage() {
     clearCart,
   } = useCart();
 
-  const [imgErrors, setImgErrors] = useState({});
+  const [imgOverrides, setImgOverrides] = useState({});
 
-  const handleImageError = (id) => {
-    setImgErrors((prev) => ({ ...prev, [id]: true }));
+  const handleImageError = (id, item) => {
+    setImgOverrides((prev) => ({ ...prev, [id]: getFallbackImage(item) }));
   };
 
   if (cartItems.length === 0) {
@@ -102,18 +103,12 @@ export default function CartPage() {
                 <article key={pId} className="fh-cart-item">
                   {/* Image */}
                   <div className="fh-cart-item__img-wrap">
-                    {(item.image || item.imageUrl) && !hasImgError ? (
-                      <img
-                        src={item.image || item.imageUrl}
-                        alt={item.name}
-                        className="fh-cart-item__img"
-                        onError={() => handleImageError(pId)}
-                      />
-                    ) : (
-                      <span className="fh-cart-item__placeholder" aria-hidden="true">
-                        🍽️
-                      </span>
-                    )}
+                    <img
+                      src={imgOverrides[pId] || getProductImage(item)}
+                      alt={item.name}
+                      className="fh-cart-item__img"
+                      onError={() => handleImageError(pId, item)}
+                    />
                   </div>
 
                   {/* Info */}

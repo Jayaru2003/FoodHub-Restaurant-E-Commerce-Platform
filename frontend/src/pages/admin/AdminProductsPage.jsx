@@ -1,16 +1,27 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import StatusBadge from '../../components/admin/StatusBadge';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import ProductTable from '../../components/admin/ProductTable';
 import ProductModal from '../../components/admin/ProductModal';
+import DeleteConfirmation from '../../components/admin/DeleteConfirmation';
 import CategoryModal from '../../components/admin/CategoryModal';
 import LoadingState from '../../components/LoadingState';
 import ErrorState from '../../components/ErrorState';
 import EmptyState from '../../components/EmptyState';
+import ErrorMessage from '../../components/ErrorMessage';
 import { getProducts, getCategories } from '../../services/productService';
 import { createProduct, updateProduct, deleteProduct, createCategory } from '../../services/adminService';
 
 /**
  * AdminProductsPage Component
- * Full product catalog management (Create, Read, Update, Delete, Availability Toggle).
+ * Full product catalog management page for Admins.
+ * Features:
+ * - Product list/table with image, name, category, price, stock, availability, actions
+ * - Add/Edit Product forms in modal with client & server validation
+ * - Delete product with confirmation modal
+ * - Availability toggle
+ * - Search by name/description
+ * - Filter by category and availability
+ * - Success feedback toasts/alerts for Create, Update, Delete
+ * - Comprehensive backend error handling
  */
 export default function AdminProductsPage() {
   const [products, setProducts] = useState([]);
@@ -23,12 +34,31 @@ export default function AdminProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [availabilityFilter, setAvailabilityFilter] = useState('ALL');
 
-  // Modals
+  // Modals & Dialogs State
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const fetchData = async () => {
+  // Active items for actions
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [deletingProduct, setDeletingProduct] = useState(null);
+
+  // Action status states
+  const [savingProduct, setSavingProduct] = useState(false);
+  const [productFormError, setProductFormError] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Feedback notifications
+  const [feedbackMessage, setFeedbackMessage] = useState(null);
+
+  const showFeedback = (type, message) => {
+    setFeedbackMessage({ type, message });
+    setTimeout(() => {
+      setFeedbackMessage(null);
+    }, 4000);
+  };
+
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -41,18 +71,19 @@ export default function AdminProductsPage() {
       setProducts(productList);
       setCategories(Array.isArray(categoriesRes) ? categoriesRes : []);
     } catch (err) {
-      console.error('Failed to load products page data:', err);
-      setError('Failed to fetch products or categories. Please check your backend connection.');
+      console.error('Failed to load products or categories:', err);
+      const msg = err.response?.data?.message || 'Failed to fetch catalog data. Please verify your backend server.';
+      setError(msg);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
-  // Filtered Products
+  // Filtered products list
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       const matchesSearch =
@@ -73,26 +104,75 @@ export default function AdminProductsPage() {
     });
   }, [products, search, selectedCategory, availabilityFilter]);
 
-  // Actions
+  // --- Handlers ---
+
   const handleOpenAddModal = () => {
     setEditingProduct(null);
+    setProductFormError(null);
     setIsProductModalOpen(true);
   };
 
   const handleOpenEditModal = (product) => {
     setEditingProduct(product);
+    setProductFormError(null);
     setIsProductModalOpen(true);
   };
 
   const handleSaveProduct = async (payload, id) => {
-    if (id) {
-      const updated = await updateProduct(id, payload);
-      setProducts((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, ...updated } : p))
-      );
-    } else {
-      const created = await createProduct(payload);
-      setProducts((prev) => [created, ...prev]);
+    setSavingProduct(true);
+    setProductFormError(null);
+    try {
+      if (id) {
+        // Update product
+        const updated = await updateProduct(id, payload);
+        setProducts((prev) =>
+          prev.map((p) => (p.id === id ? { ...p, ...updated } : p))
+        );
+        showFeedback('success', `Product "${updated.name || payload.name}" updated successfully!`);
+      } else {
+        // Create product
+        const created = await createProduct(payload);
+        setProducts((prev) => [created, ...prev]);
+        showFeedback('success', `Product "${created.name || payload.name}" created successfully!`);
+      }
+      setIsProductModalOpen(false);
+    } catch (err) {
+      console.error('Error saving product:', err);
+      const msg =
+        err.response?.data?.message ||
+        (err.response?.status === 403
+          ? 'Access denied. Only ADMIN users can manage products.'
+          : err.message || 'Failed to save product.');
+      setProductFormError(msg);
+    } finally {
+      setSavingProduct(false);
+    }
+  };
+
+  const handleOpenDeleteModal = (product) => {
+    setDeletingProduct(product);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingProduct) return;
+    setIsDeleting(true);
+    try {
+      await deleteProduct(deletingProduct.id);
+      setProducts((prev) => prev.filter((p) => p.id !== deletingProduct.id));
+      showFeedback('success', `Product "${deletingProduct.name}" deleted successfully!`);
+      setIsDeleteModalOpen(false);
+      setDeletingProduct(null);
+    } catch (err) {
+      console.error('Error deleting product:', err);
+      const msg =
+        err.response?.data?.message ||
+        (err.response?.status === 403
+          ? 'Access denied. Only ADMIN users can delete products.'
+          : 'Failed to delete product. It may be linked to existing orders.');
+      showFeedback('error', msg);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -111,31 +191,40 @@ export default function AdminProductsPage() {
       setProducts((prev) =>
         prev.map((p) => (p.id === product.id ? { ...p, ...updated } : p))
       );
+      showFeedback(
+        'success',
+        `Product "${product.name}" marked as ${updated.available ? 'Available' : 'Unavailable'}.`
+      );
     } catch (err) {
-      alert('Failed to update product availability');
-    }
-  };
-
-  const handleDeleteProduct = async (product) => {
-    if (!window.confirm(`Are you sure you want to delete "${product.name}"?`)) {
-      return;
-    }
-    try {
-      await deleteProduct(product.id);
-      setProducts((prev) => prev.filter((p) => p.id !== product.id));
-    } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to delete product.';
-      alert(msg);
+      console.error('Error toggling availability:', err);
+      const msg =
+        err.response?.data?.message ||
+        (err.response?.status === 403
+          ? 'Access denied. Only ADMIN users can update products.'
+          : 'Failed to update product availability.');
+      showFeedback('error', msg);
     }
   };
 
   const handleSaveCategory = async (categoryPayload) => {
-    const created = await createCategory(categoryPayload);
-    setCategories((prev) => [...prev, created]);
+    try {
+      const created = await createCategory(categoryPayload);
+      setCategories((prev) => [...prev, created]);
+      showFeedback('success', `Category "${created.name}" created successfully!`);
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to create category.';
+      showFeedback('error', msg);
+    }
+  };
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setSelectedCategory('ALL');
+    setAvailabilityFilter('ALL');
   };
 
   if (loading) {
-    return <LoadingState message="Loading products inventory..." />;
+    return <LoadingState message="Loading product inventory..." />;
   }
 
   if (error) {
@@ -145,52 +234,77 @@ export default function AdminProductsPage() {
   return (
     <div className="space-y-6 animate-fadeIn">
 
-      {/* Title & Action Buttons */}
+      {/* Alert / Feedback Notification Banner */}
+      {feedbackMessage && (
+        <div
+          className={`rounded-2xl p-4 text-xs font-bold border transition shadow-sm flex items-center justify-between ${
+            feedbackMessage.type === 'success'
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              : 'bg-rose-50 text-rose-800 border-rose-200'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span>{feedbackMessage.type === 'success' ? '✓' : '⚠️'}</span>
+            <span>{feedbackMessage.message}</span>
+          </div>
+          <button
+            onClick={() => setFeedbackMessage(null)}
+            className="text-slate-400 hover:text-slate-600 font-bold ml-4"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Header & Page Action Controls */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
-            Products & Catalog
+            Product Management
           </h2>
-          <p className="text-xs font-medium text-slate-500">
-            Create, update, and manage menu items and stock availability
+          <p className="text-xs font-medium text-slate-500 mt-0.5">
+            Add, update, search, and manage FoodHub products & stock
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => setIsCategoryModalOpen(true)}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-xs hover:bg-slate-50 transition"
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition"
           >
             + New Category
           </button>
           <button
             onClick={handleOpenAddModal}
-            className="rounded-xl bg-orange-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm shadow-orange-600/30 hover:bg-orange-700 transition"
+            className="rounded-xl bg-orange-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-orange-700 transition"
           >
             + Add New Product
           </button>
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
+      {/* Search & Filter Controls */}
       <div className="grid grid-cols-1 gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs sm:grid-cols-12">
-        {/* Search */}
+        
+        {/* Search Input */}
         <div className="sm:col-span-6">
+          <label className="sr-only">Search Products</label>
           <input
             type="text"
             placeholder="Search products by name or description..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-xs font-medium focus:border-orange-500 focus:outline-none"
+            className="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
           />
         </div>
 
         {/* Category Filter */}
         <div className="sm:col-span-3">
+          <label className="sr-only">Filter by Category</label>
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 focus:border-orange-500 focus:outline-none"
+            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
           >
             <option value="ALL">All Categories ({categories.length})</option>
             {categories.map((cat) => (
@@ -203,10 +317,11 @@ export default function AdminProductsPage() {
 
         {/* Availability Filter */}
         <div className="sm:col-span-3">
+          <label className="sr-only">Filter by Availability</label>
           <select
             value={availabilityFilter}
             onChange={(e) => setAvailabilityFilter(e.target.value)}
-            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 focus:border-orange-500 focus:outline-none"
+            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
           >
             <option value="ALL">All Availability</option>
             <option value="AVAILABLE">Available Only</option>
@@ -215,123 +330,59 @@ export default function AdminProductsPage() {
         </div>
       </div>
 
-      {/* Products Table */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
-        {filteredProducts.length === 0 ? (
-          <EmptyState
-            title="No products found"
-            message={
-              search || selectedCategory !== 'ALL' || availabilityFilter !== 'ALL'
-                ? 'Try adjusting your search criteria or category filter.'
-                : 'Get started by adding your first product to the FoodHub menu.'
-            }
-            actionLabel={!products.length ? '+ Add First Product' : undefined}
-            onAction={!products.length ? handleOpenAddModal : undefined}
-          />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">
-                <tr>
-                  <th className="px-5 py-3.5">Product</th>
-                  <th className="px-5 py-3.5">Category</th>
-                  <th className="px-5 py-3.5">Price</th>
-                  <th className="px-5 py-3.5">Stock</th>
-                  <th className="px-5 py-3.5">Status</th>
-                  <th className="px-5 py-3.5 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                {filteredProducts.map((product) => (
-                  <tr key={product.id} className="hover:bg-slate-50/80 transition">
-                    
-                    {/* Image & Title */}
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={product.imageUrl || '/images/product_burger_deluxe.jpg'}
-                          alt={product.name}
-                          className="h-12 w-12 rounded-xl object-cover border border-slate-200"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = '/images/product_burger_deluxe.jpg';
-                          }}
-                        />
-                        <div>
-                          <p className="font-extrabold text-slate-900">{product.name}</p>
-                          <p className="line-clamp-1 text-xs text-slate-500 max-w-xs">
-                            {product.description || 'No description provided'}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
+      {/* Main Content Area: ProductTable or EmptyState */}
+      {filteredProducts.length === 0 ? (
+        <EmptyState
+          title="No products found"
+          message={
+            search || selectedCategory !== 'ALL' || availabilityFilter !== 'ALL'
+              ? 'No products matched your search or category criteria.'
+              : 'Start by creating your first product.'
+          }
+          actionLabel={
+            search || selectedCategory !== 'ALL' || availabilityFilter !== 'ALL'
+              ? 'Reset Filters'
+              : '+ Add First Product'
+          }
+          onAction={
+            search || selectedCategory !== 'ALL' || availabilityFilter !== 'ALL'
+              ? handleResetFilters
+              : handleOpenAddModal
+          }
+        />
+      ) : (
+        <ProductTable
+          products={filteredProducts}
+          onEdit={handleOpenEditModal}
+          onDelete={handleOpenDeleteModal}
+          onToggleAvailability={handleToggleAvailability}
+        />
+      )}
 
-                    {/* Category */}
-                    <td className="px-5 py-4 text-xs font-bold text-slate-600">
-                      <span className="inline-block rounded-lg bg-slate-100 px-2.5 py-1">
-                        {product.category?.name || 'Uncategorized'}
-                      </span>
-                    </td>
-
-                    {/* Price */}
-                    <td className="px-5 py-4 font-extrabold text-slate-900">
-                      ${Number(product.price || 0).toFixed(2)}
-                    </td>
-
-                    {/* Stock */}
-                    <td className="px-5 py-4 text-xs font-bold">
-                      <span className={product.stockQuantity < 5 ? 'text-rose-600 font-black' : 'text-slate-700'}>
-                        {product.stockQuantity ?? 'N/A'} units
-                      </span>
-                    </td>
-
-                    {/* Status Badge */}
-                    <td className="px-5 py-4">
-                      <button
-                        type="button"
-                        onClick={() => handleToggleAvailability(product)}
-                        title="Click to toggle availability"
-                      >
-                        <StatusBadge status={product.available} type="availability" />
-                      </button>
-                    </td>
-
-                    {/* Action buttons */}
-                    <td className="px-5 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleOpenEditModal(product)}
-                          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteProduct(product)}
-                          className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Product Modal */}
+      {/* Reusable Product Create/Edit Modal */}
       <ProductModal
         isOpen={isProductModalOpen}
         onClose={() => setIsProductModalOpen(false)}
         onSave={handleSaveProduct}
         product={editingProduct}
         categories={categories}
+        submitting={savingProduct}
+        error={productFormError}
       />
 
-      {/* Category Modal */}
+      {/* Reusable Delete Confirmation Dialog */}
+      <DeleteConfirmation
+        isOpen={isDeleteModalOpen}
+        productName={deletingProduct?.name || ''}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          setIsDeleteModalOpen(false);
+          setDeletingProduct(null);
+        }}
+        deleting={isDeleting}
+      />
+
+      {/* Category Creation Modal */}
       <CategoryModal
         isOpen={isCategoryModalOpen}
         onClose={() => setIsCategoryModalOpen(false)}

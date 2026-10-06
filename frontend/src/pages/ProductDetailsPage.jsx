@@ -6,14 +6,28 @@ import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
 import { useCart } from '../context/CartContext';
 
+import { getProductImage, getFallbackImage } from '../utils/imageUtils';
+
 export default function ProductDetailsPage() {
   const { id } = useParams();
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
+  const [imgSrc, setImgSrc] = useState(null);
 
   const loadProduct = useCallback(() => getProductById(id), [id]);
   const { data: product, isLoading, error, retry } = useAsync(loadProduct);
+
+  const currentImg = imgSrc || (product ? getProductImage(product) : '');
+
+  const handleImageError = () => {
+    if (product) {
+      const fallback = getFallbackImage(product);
+      if (imgSrc !== fallback) {
+        setImgSrc(fallback);
+      }
+    }
+  };
 
   if (isLoading) return <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8"><LoadingState /></section>;
   if (error) return <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8"><ErrorState message="We could not find that dish." onRetry={retry} /></section>;
@@ -39,7 +53,12 @@ export default function ProductDetailsPage() {
       <Link to="/products" className="text-sm font-bold text-brand-600 hover:text-brand-700">← Back to menu</Link>
       <div className="mt-8 grid overflow-hidden rounded-[2rem] bg-white shadow-soft md:grid-cols-2">
         <div className="aspect-square bg-orange-50">
-          {product.imageUrl ? <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-8xl">🍽️</div>}
+          <img
+            src={currentImg}
+            alt={product.name}
+            className="h-full w-full object-cover"
+            onError={handleImageError}
+          />
         </div>
         <div className="flex flex-col justify-center p-7 sm:p-10">
           <p className="font-bold uppercase tracking-[0.2em] text-brand-600">{product.category?.name || (typeof product.category === 'string' ? product.category : 'FoodHub favourite')}</p>
