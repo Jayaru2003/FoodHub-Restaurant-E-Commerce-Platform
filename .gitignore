@@ -1,8 +1,7 @@
 target/
-frontend/node_modules/
-frontend/dist/
 **/node_modules/
 **/dist/
+**/build/
 **/coverage/
 *.log
 npm-debug.log*
@@ -11,15 +10,16 @@ yarn-error.log*
 .npm/
 .eslintcache
 .vite/
+*.tmp
+*.temp
+*.swp
+*.swo
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -39,7 +39,6 @@ yarn-error.log*
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
@@ -57,3 +56,7 @@ application-*.yaml
 
 ### Mac OS ###
 .DS_Store
+
+### Windows ###
+Thumbs.db
+Desktop.ini

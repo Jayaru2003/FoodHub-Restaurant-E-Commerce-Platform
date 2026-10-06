@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import './Navbar.css';
 
 /* ── nav items config ──────────────────────────────────── */
@@ -27,9 +28,9 @@ const IconCart = () => (
        viewBox="0 0 24 24" fill="none" stroke="currentColor"
        strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
        aria-hidden="true">
-    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
-    <line x1="3" y1="6" x2="21" y2="6" />
-    <path d="M16 10a4 4 0 0 1-8 0" />
+    <circle cx="9" cy="21" r="1" />
+    <circle cx="20" cy="21" r="1" />
+    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
   </svg>
 );
 
@@ -66,8 +67,17 @@ export default function Navbar() {
   const searchInputRef = useRef(null);
   const navigate       = useNavigate();
 
-  // Cart count from context (stub — replace with real data later)
+  // Cart count from context
   const { cartCount } = useCart();
+  const { isAuthenticated, user, logout } = useAuth();
+  const [badgeBump, setBadgeBump] = useState(false);
+
+  useEffect(() => {
+    if (cartCount === 0) return;
+    setBadgeBump(true);
+    const timer = setTimeout(() => setBadgeBump(false), 300);
+    return () => clearTimeout(timer);
+  }, [cartCount]);
 
   /* ── scroll shadow ─────────────────────────────────────── */
   useEffect(() => {
@@ -214,20 +224,43 @@ export default function Navbar() {
                 <IconCart />
               </Link>
               {cartCount > 0 && (
-                <span className="fh-cart__badge" aria-hidden="true">
+                <span className={`fh-cart__badge${badgeBump ? ' fh-cart__badge--bump' : ''}`} aria-hidden="true">
                   {cartCount > 99 ? '99+' : cartCount}
                 </span>
               )}
             </div>
 
-            {/* Sign In */}
-            <Link
-              to="/login"
-              className="fh-signin"
-              aria-label="Sign in to your account"
-            >
-              Sign In <IconArrow />
-            </Link>
+            {/* Account / Sign In */}
+            {isAuthenticated ? (
+              <div className="fh-user-menu flex items-center gap-2">
+                {user?.role === 'ADMIN' && (
+                  <Link
+                    to="/admin"
+                    className="rounded-lg bg-orange-100 px-2.5 py-1.5 text-xs font-bold text-orange-700 hover:bg-orange-200 transition flex items-center gap-1"
+                  >
+                    ⚡ Admin Panel
+                  </Link>
+                )}
+                <span className="text-sm font-semibold text-slate-800">
+                  👤 {user?.name ? user.name.split(' ')[0] : 'Account'}
+                </span>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="fh-signin"
+                aria-label="Sign in to your account"
+              >
+                Sign In <IconArrow />
+              </Link>
+            )}
           </div>
 
           {/* ── Mobile hamburger ──────────────────────────── */}
@@ -328,15 +361,41 @@ export default function Navbar() {
             )}
           </Link>
 
-          {/* Mobile Sign In */}
-          <Link
-            to="/login"
-            className="fh-drawer__signin"
-            onClick={closeMobileMenu}
-            aria-label="Sign in to your account"
-          >
-            Sign In <IconArrow />
-          </Link>
+          {/* Mobile Sign In / Logout */}
+          {isAuthenticated ? (
+            <div className="space-y-2">
+              {user?.role === 'ADMIN' && (
+                <Link
+                  to="/admin"
+                  className="fh-drawer__signin"
+                  style={{ background: '#ffedf0', color: '#ea580c', border: '1px solid #ffedd5' }}
+                  onClick={closeMobileMenu}
+                >
+                  ⚡ Admin Panel
+                </Link>
+              )}
+              <button
+                type="button"
+                className="fh-drawer__signin"
+                style={{ background: '#f1f5f9', color: '#334155' }}
+                onClick={() => {
+                  logout();
+                  closeMobileMenu();
+                }}
+              >
+                Logout ({user?.name ? user.name.split(' ')[0] : 'User'})
+              </button>
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="fh-drawer__signin"
+              onClick={closeMobileMenu}
+              aria-label="Sign in to your account"
+            >
+              Sign In <IconArrow />
+            </Link>
+          )}
         </div>
       </nav>
     </>
