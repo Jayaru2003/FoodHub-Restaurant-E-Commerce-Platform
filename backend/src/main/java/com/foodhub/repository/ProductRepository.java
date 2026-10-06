@@ -17,13 +17,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query(value = """
             select p from Product p
             join fetch p.category c
-            where (:search is null or lower(p.name) like lower(concat('%', :search, '%')))
+            where (cast(:search as string) is null or lower(p.name) like lower(concat('%', cast(:search as string), '%')))
               and (:categoryId is null or c.id = :categoryId)
               and (:available is null or p.available = :available)
             """,
             countQuery = """
                     select count(p) from Product p
-                    where (:search is null or lower(p.name) like lower(concat('%', :search, '%')))
+                    where (cast(:search as string) is null or lower(p.name) like lower(concat('%', cast(:search as string), '%')))
                       and (:categoryId is null or p.category.id = :categoryId)
                       and (:available is null or p.available = :available)
                     """)

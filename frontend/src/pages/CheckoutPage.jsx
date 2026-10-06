@@ -21,6 +21,8 @@ function validateSriLankanPhone(phone) {
   return phoneRegex.test(cleaned);
 }
 
+import { getProductImage, getFallbackImage } from '../utils/imageUtils';
+
 export default function CheckoutPage() {
   const { cartItems = [], cartCount = 0, cartSubtotal = 0, clearCart } = useCart();
   const { user } = useAuth();
@@ -47,8 +49,8 @@ export default function CheckoutPage() {
   const [createdOrder, setCreatedOrder] = useState(null);
   const [imgErrors, setImgErrors] = useState({});
 
-  const handleImageError = (id) => {
-    setImgErrors((prev) => ({ ...prev, [id]: true }));
+  const handleImageError = (id, item) => {
+    setImgErrors((prev) => ({ ...prev, [id]: getFallbackImage(item) }));
   };
 
   // Fetch saved user addresses on load with strict Array check
@@ -695,18 +697,12 @@ export default function CheckoutPage() {
 
                   return (
                     <div key={pId} className="fh-summary-item">
-                      {(item.image || item.imageUrl) && !hasImgErr ? (
-                        <img
-                          src={item.image || item.imageUrl}
-                          alt={item.name}
-                          className="fh-summary-item__img"
-                          onError={() => handleImageError(pId)}
-                        />
-                      ) : (
-                        <div className="fh-summary-item__placeholder" aria-hidden="true">
-                          🍽️
-                        </div>
-                      )}
+                      <img
+                        src={imgErrors[pId] || getProductImage(item)}
+                        alt={item.name}
+                        className="fh-summary-item__img"
+                        onError={() => handleImageError(pId, item)}
+                      />
 
                       <div className="fh-summary-item__details">
                         <div className="fh-summary-item__name">{item.name}</div>
