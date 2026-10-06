@@ -50,7 +50,7 @@ public class OrderItem {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal subtotal;
 
-    protected OrderItem() {
+    public OrderItem() {
     }
 
     public Long getId() {
