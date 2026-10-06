@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: foodhub-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: foodhub
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: foodhub-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/foodhub
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgrespassword
+      JWT_SECRET: FoodHub-Development-Secret-Key-2026-Super-Secret-32-Chars
+      JWT_EXPIRATION_MS: 3600000
+      FRONTEND_ORIGIN: http://localhost:3000,http://localhost:5173
+      ADMIN_EMAIL: admin@gmail.com
+      ADMIN_PASSWORD: admin123
+      ADMIN_NAME: Admin
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
