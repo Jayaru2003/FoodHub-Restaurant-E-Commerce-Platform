@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import StatusBadge from '../../components/admin/StatusBadge';
 import OrderDetailsModal from '../../components/admin/OrderDetailsModal';
 import LoadingState from '../../components/LoadingState';
-import ErrorState from '../../components/ErrorState';
 import EmptyState from '../../components/EmptyState';
 import { getAdminOrders, updateOrderStatus, updatePaymentStatus } from '../../services/adminService';
 
@@ -21,9 +21,11 @@ const STATUS_TABS = [
  * Full admin order management interface for processing customer orders.
  */
 export default function AdminOrdersPage() {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isAuthError, setIsAuthError] = useState(false);
 
   const [activeTab, setActiveTab] = useState('ALL');
   const [search, setSearch] = useState('');
@@ -34,12 +36,25 @@ export default function AdminOrdersPage() {
   const fetchOrders = async () => {
     setLoading(true);
     setError(null);
+    setIsAuthError(false);
     try {
       const data = await getAdminOrders();
-      setOrders(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : (data?.content || []);
+      setOrders(list);
     } catch (err) {
       console.error('Failed to load admin orders:', err);
-      setError('Failed to fetch orders. Please verify backend service availability.');
+      let errMsg = 'Failed to fetch orders. Please verify backend service availability.';
+      if (err.response) {
+        if (err.response.status === 401 || err.response.status === 403) {
+          errMsg = 'Admin session expired or authorization required. Please log in with an Administrator account.';
+          setIsAuthError(true);
+        } else if (err.response.data?.message) {
+          errMsg = err.response.data.message;
+        }
+      } else if (err.request) {
+        errMsg = 'Unable to reach backend API at http://localhost:8080. Please ensure the FoodHub Spring Boot backend is running.';
+      }
+      setError(errMsg);
     } finally {
       setLoading(false);
     }
@@ -50,6 +65,7 @@ export default function AdminOrdersPage() {
   }, []);
 
   const filteredOrders = useMemo(() => {
+    if (!Array.isArray(orders)) return [];
     return orders.filter((order) => {
       const matchesTab =
         activeTab === 'ALL' || order.orderStatus?.toUpperCase() === activeTab;
@@ -57,9 +73,9 @@ export default function AdminOrdersPage() {
       const query = search.trim().toLowerCase();
       const matchesSearch =
         !query ||
-        String(order.id).includes(query) ||
-        order.customerName?.toLowerCase().includes(query) ||
-        order.customerPhone?.toLowerCase().includes(query);
+        String(order.id || '').includes(query) ||
+        (order.customerName || '').toLowerCase().includes(query) ||
+        (order.customerPhone || '').toLowerCase().includes(query);
 
       return matchesTab && matchesSearch;
     });
@@ -90,7 +106,27 @@ export default function AdminOrdersPage() {
   }
 
   if (error) {
-    return <ErrorState message={error} onRetry={fetchOrders} />;
+    return (
+      <div className="rounded-3xl border border-red-100 bg-red-50 p-8 text-center space-y-4">
+        <p className="font-bold text-red-800 text-base">{error}</p>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <button
+            onClick={fetchOrders}
+            className="rounded-xl bg-red-700 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-800 transition"
+          >
+            🔄 Try again
+          </button>
+          {isAuthError && (
+            <Link
+              to="/login"
+              className="rounded-xl border border-red-300 bg-white px-5 py-2.5 text-xs font-bold text-red-700 hover:bg-red-100 transition"
+            >
+              🔑 Log In as Admin
+            </Link>
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (

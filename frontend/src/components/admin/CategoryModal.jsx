@@ -1,15 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ErrorMessage from '../ErrorMessage';
 
 /**
  * CategoryModal Component
- * Modal for creating a new product category.
+ * Modal for creating or updating a food product category.
  */
-export default function CategoryModal({ isOpen, onClose, onSave }) {
+export default function CategoryModal({ isOpen, onClose, onSave, category = null }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (category) {
+      setName(category.name || '');
+      setDescription(category.description || '');
+    } else {
+      setName('');
+      setDescription('');
+    }
+    setError('');
+  }, [category, isOpen]);
 
   if (!isOpen) return null;
 
@@ -24,12 +35,15 @@ export default function CategoryModal({ isOpen, onClose, onSave }) {
 
     try {
       setSubmitting(true);
-      await onSave({ name: name.trim(), description: description.trim() });
+      await onSave(
+        { name: name.trim(), description: description.trim() },
+        category?.id
+      );
       setName('');
       setDescription('');
       onClose();
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Failed to create category.';
+      const msg = err.response?.data?.message || err.message || 'Failed to save category.';
       setError(msg);
     } finally {
       setSubmitting(false);
@@ -41,7 +55,7 @@ export default function CategoryModal({ isOpen, onClose, onSave }) {
       <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl transition-all">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <h3 className="text-xl font-bold text-slate-900">
-            Add New Category
+            {category ? 'Edit Category' : 'Add New Category'}
           </h3>
           <button
             type="button"
@@ -92,7 +106,7 @@ export default function CategoryModal({ isOpen, onClose, onSave }) {
               disabled={submitting}
               className="rounded-xl bg-orange-600 px-5 py-2 text-sm font-bold text-white hover:bg-orange-700 transition disabled:opacity-50"
             >
-              {submitting ? 'Saving...' : 'Add Category'}
+              {submitting ? 'Saving...' : category ? 'Update Category' : 'Add Category'}
             </button>
           </div>
         </form>

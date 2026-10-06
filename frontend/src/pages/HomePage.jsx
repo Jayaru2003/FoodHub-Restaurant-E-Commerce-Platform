@@ -1,7 +1,18 @@
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
-import { MOCK_PRODUCTS, MOCK_CATEGORIES } from '../data/mockData';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorMessage from '../components/ErrorMessage';
+import { getProducts, getCategories } from '../services/productService';
 import './HomePage.css';
+
+const IconCart = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="9" cy="21" r="1" />
+    <circle cx="20" cy="21" r="1" />
+    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+  </svg>
+);
 
 /* ─── Section: Hero ─────────────────────────────────────── */
 function HeroSection() {
@@ -31,10 +42,10 @@ function HeroSection() {
               <Link
                 to="/cart"
                 id="hero-order-now-btn"
-                className="fh-hero__btn fh-hero__btn--primary"
+                className="fh-hero__btn fh-hero__btn--primary flex items-center gap-2"
                 aria-label="Start ordering food now"
               >
-                🛒 Order Now
+                <IconCart /> Order Now
               </Link>
               <Link
                 to="/products"
@@ -89,14 +100,43 @@ function HeroSection() {
   );
 }
 
+/* ─── Helper: Category Icon/Emoji ────────────────────────── */
+function getCategoryEmoji(name) {
+  if (!name) return '🍽️';
+  const lower = name.toLowerCase();
+  if (lower.includes('pizza')) return '🍕';
+  if (lower.includes('burger')) return '🍔';
+  if (lower.includes('pasta') || lower.includes('noodle')) return '🍝';
+  if (lower.includes('sushi') || lower.includes('fish') || lower.includes('seafood') || lower.includes('shushi')) return '🍣';
+  if (lower.includes('salad') || lower.includes('veggie')) return '🥗';
+  if (lower.includes('dessert') || lower.includes('cake') || lower.includes('sweet') || lower.includes('ice')) return '🍰';
+  if (lower.includes('drink') || lower.includes('beverage') || lower.includes('juice')) return '🥤';
+  if (lower.includes('chicken') || lower.includes('meat') || lower.includes('steak')) return '🍗';
+  return '🍽️';
+}
+
 /* ─── Section: Featured Products ────────────────────────── */
-/**
- * TODO: Replace MOCK_PRODUCTS with a real API call:
- *   const { data, isLoading, error } = useAsync(() => getProducts({ size: 6 }));
- *   const products = data?.content ?? [];
- */
 function FeaturedProducts() {
-  const products = MOCK_PRODUCTS;
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchFeatured = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await getProducts({ available: true, size: 6 });
+      setProducts(response?.content || []);
+    } catch (err) {
+      setError('Unable to load featured available dishes right now.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFeatured();
+  }, [fetchFeatured]);
 
   return (
     <section className="fh-featured" aria-labelledby="featured-heading">
@@ -107,17 +147,29 @@ function FeaturedProducts() {
             Freshly Featured Dishes
           </h2>
           <p className="fh-section-sub">
-            Handpicked by our chefs — a taste of what's waiting for you on the full menu.
+            Handpicked dishes currently available on our menu.
           </p>
         </header>
 
-        <div className="fh-featured__grid" role="list" aria-label="Featured food items">
-          {products.map((product) => (
-            <div key={product.id} role="listitem">
-              <ProductCard product={product} />
-            </div>
-          ))}
-        </div>
+        {isLoading ? (
+          <LoadingSpinner label="Loading available dishes..." />
+        ) : error ? (
+          <ErrorMessage message={error} onRetry={fetchFeatured} />
+        ) : products.length === 0 ? (
+          <div className="text-center py-10 bg-white rounded-3xl border border-slate-100 p-8 shadow-sm max-w-lg mx-auto">
+            <span className="text-4xl" role="img" aria-label="Food plate">🍽️</span>
+            <h3 className="mt-3 text-lg font-bold text-slate-800">No dishes currently available</h3>
+            <p className="mt-1 text-sm text-slate-500">Please check back soon or explore our full menu.</p>
+          </div>
+        ) : (
+          <div className="fh-featured__grid" role="list" aria-label="Featured food items">
+            {products.map((product) => (
+              <div key={product.id} role="listitem">
+                <ProductCard product={product} />
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="fh-featured__footer">
           <Link
@@ -135,16 +187,31 @@ function FeaturedProducts() {
 }
 
 /* ─── Section: Categories ───────────────────────────────── */
-/**
- * TODO: Replace MOCK_CATEGORIES with a real API call:
- *   const { data: categories } = useAsync(getCategories);
- */
 function CategoriesSection() {
   const navigate = useNavigate();
-  const categories = MOCK_CATEGORIES;
+  const [categories, setCategories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchCategories = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await getCategories();
+      setCategories(data || []);
+    } catch (err) {
+      setError('Unable to load categories right now.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const handleCategoryClick = (categoryId) => {
-    navigate(`/products?category=${encodeURIComponent(categoryId)}`);
+    navigate(`/products?categoryId=${encodeURIComponent(categoryId)}`);
   };
 
   return (
@@ -160,25 +227,57 @@ function CategoriesSection() {
           </p>
         </header>
 
-        <div className="fh-categories__grid" role="list" aria-label="Food categories">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              id={`category-${cat.id}-btn`}
-              type="button"
-              className="fh-category-card"
-              onClick={() => handleCategoryClick(cat.id)}
-              aria-label={`Browse ${cat.name}: ${cat.description}`}
-              role="listitem"
-            >
-              <span className="fh-category-card__emoji" aria-hidden="true">
-                {cat.emoji}
-              </span>
-              <span className="fh-category-card__name">{cat.name}</span>
-              <span className="fh-category-card__desc">{cat.description}</span>
-            </button>
-          ))}
-        </div>
+        {isLoading ? (
+          <LoadingSpinner label="Loading categories..." />
+        ) : error ? (
+          <ErrorMessage message={error} onRetry={fetchCategories} />
+        ) : categories.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-slate-500">No categories found.</p>
+          </div>
+        ) : (
+          <div className="fh-categories__grid" role="list" aria-label="Food categories">
+            {categories.map((cat) => {
+              const emoji = getCategoryEmoji(cat.name);
+              return (
+                <button
+                  key={cat.id}
+                  id={`category-${cat.id}-btn`}
+                  type="button"
+                  className="fh-category-card"
+                  onClick={() => handleCategoryClick(cat.id)}
+                  aria-label={`Browse ${cat.name}${cat.description ? `: ${cat.description}` : ''}`}
+                  role="listitem"
+                >
+                  {cat.imageUrl ? (
+                    <img
+                      src={cat.imageUrl}
+                      alt={cat.name}
+                      className="w-12 h-12 object-cover rounded-full mb-1"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        if (e.currentTarget.nextSibling) {
+                          e.currentTarget.nextSibling.style.display = 'block';
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <span
+                    className="fh-category-card__emoji"
+                    aria-hidden="true"
+                    style={{ display: cat.imageUrl ? 'none' : 'block' }}
+                  >
+                    {emoji}
+                  </span>
+                  <span className="fh-category-card__name">{cat.name}</span>
+                  {cat.description && (
+                    <span className="fh-category-card__desc">{cat.description}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );

@@ -1,16 +1,26 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MOCK_CATEGORIES } from '../data/mockData';
+import { getCategories } from '../services/productService';
 import './Footer.css';
 
 /**
  * Footer – global site footer rendered by MainLayout.
- *
- * Category links pull from MOCK_CATEGORIES (same mock used on HomePage).
- * When the real GET /api/categories endpoint is ready, replace the import
- * with a useAsync call here.
  */
 export default function Footer() {
   const year = new Date().getFullYear();
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    getCategories()
+      .then((data) => {
+        if (isMounted) setCategories(data || []);
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <footer className="fh-footer" aria-label="FoodHub site footer">
@@ -51,16 +61,20 @@ export default function Footer() {
           <div>
             <p className="fh-footer__col-title">Categories</p>
             <ul className="fh-footer__links">
-              {MOCK_CATEGORIES.slice(0, 5).map((cat) => (
-                <li key={cat.id}>
-                  <Link
-                    to={`/products?category=${cat.id}`}
-                    className="fh-footer__link"
-                  >
-                    {cat.emoji} {cat.name}
-                  </Link>
-                </li>
-              ))}
+              {categories.length === 0 ? (
+                <li><Link to="/products" className="fh-footer__link">All Menu</Link></li>
+              ) : (
+                categories.slice(0, 5).map((cat) => (
+                  <li key={cat.id}>
+                    <Link
+                      to={`/products?categoryId=${encodeURIComponent(cat.id)}`}
+                      className="fh-footer__link"
+                    >
+                      {cat.name}
+                    </Link>
+                  </li>
+                ))
+              )}
             </ul>
           </div>
 

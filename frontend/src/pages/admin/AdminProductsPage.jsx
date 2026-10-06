@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import ProductTable from '../../components/admin/ProductTable';
 import ProductModal from '../../components/admin/ProductModal';
 import DeleteConfirmation from '../../components/admin/DeleteConfirmation';
@@ -268,6 +269,12 @@ export default function AdminProductsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          <Link
+            to="/admin/categories"
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition"
+          >
+            Manage Categories
+          </Link>
           <button
             onClick={() => setIsCategoryModalOpen(true)}
             className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition"
