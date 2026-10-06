@@ -1,28 +1,105 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import './ProductCard.css';
+import { useCart } from '../context/CartContext';
 
 function formatPrice(price) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(price));
 }
 
+/**
+ * ProductCard – reusable card for displaying a single food product.
+ *
+ * Props:
+ *   product {object} – product data object with shape:
+ *     { id, name, description, price, available, imageUrl, category }
+ *
+ * Used on: HomePage (featured section), ProductsPage (grid)
+ */
 export default function ProductCard({ product }) {
+  const { setCartItems } = useCart();
+  const navigate = useNavigate();
+
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCartItems((prev) => {
+      const existing = prev.find((i) => i.id === product.id);
+      if (existing) {
+        return prev.map((i) =>
+          i.id === product.id ? { ...i, quantity: (i.quantity ?? 1) + 1 } : i
+        );
+      }
+      return [...prev, { ...product, quantity: 1 }];
+    });
+  };
+
+  const handleViewDetails = (e) => {
+    e.preventDefault();
+    navigate(`/products/${product.id}`);
+  };
+
   return (
-    <article className="group overflow-hidden rounded-3xl bg-white shadow-soft">
-      <div className="aspect-[4/3] overflow-hidden bg-orange-50">
+    <article className="fh-product-card group">
+      {/* Image */}
+      <div className="fh-product-card__img-wrap">
         {product.imageUrl ? (
-          <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            className="fh-product-card__img"
+            loading="lazy"
+          />
         ) : (
-          <div className="grid h-full place-items-center text-5xl">🍽️</div>
+          <div className="fh-product-card__img-placeholder" aria-hidden="true">🍽️</div>
         )}
+
+        {/* Availability badge */}
+        <span
+          className={`fh-product-card__badge ${product.available ? 'fh-product-card__badge--available' : 'fh-product-card__badge--unavailable'}`}
+          aria-label={product.available ? 'In stock' : 'Out of stock'}
+        >
+          {product.available ? '● Available' : '○ Unavailable'}
+        </span>
       </div>
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="font-bold text-ink">{product.name}</h3>
-          <span className="shrink-0 font-bold text-brand-600">{formatPrice(product.price)}</span>
+
+      {/* Body */}
+      <div className="fh-product-card__body">
+        <div className="fh-product-card__meta">
+          <h3 className="fh-product-card__name">{product.name}</h3>
+          <span className="fh-product-card__price">{formatPrice(product.price)}</span>
         </div>
-        <p className="mt-2 line-clamp-2 min-h-10 text-sm leading-5 text-slate-500">{product.description || 'A delicious FoodHub favourite.'}</p>
-        <Link to={`/products/${product.id}`} className="mt-5 inline-flex text-sm font-bold text-brand-600 hover:text-brand-700">
-          View details <span aria-hidden="true" className="ml-1">→</span>
-        </Link>
+
+        <p className="fh-product-card__desc">
+          {product.description || 'A FoodHub favourite, freshly prepared for you.'}
+        </p>
+
+        {/* Actions */}
+        <div className="fh-product-card__actions">
+          <button
+            type="button"
+            className="fh-product-card__btn fh-product-card__btn--details"
+            onClick={handleViewDetails}
+            aria-label={`View details for ${product.name}`}
+          >
+            View Details
+          </button>
+
+          <button
+            type="button"
+            className="fh-product-card__btn fh-product-card__btn--cart"
+            onClick={handleAddToCart}
+            disabled={!product.available}
+            aria-label={`Add ${product.name} to cart`}
+          >
+            {product.available ? (
+              <>
+                <span aria-hidden="true">+</span> Add to Cart
+              </>
+            ) : (
+              'Unavailable'
+            )}
+          </button>
+        </div>
       </div>
     </article>
   );

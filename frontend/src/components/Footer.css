@@ -1,0 +1,125 @@
+/* =========================================================
+   Footer.css – FoodHub global site footer styles
+   Scope: .fh-footer-* (BEM, no Tailwind collisions)
+   ========================================================= */
+
+.fh-footer {
+  background: #0f1511;
+  padding: 3.5rem 0 0;
+  border-top: 1px solid rgba(255, 253, 249, 0.05);
+}
+
+.fh-footer__section {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+@media (max-width: 639px) {
+  .fh-footer__section {
+    padding: 0 1rem;
+  }
+}
+
+/* ── 4-column responsive grid ───────────────────────────── */
+.fh-footer__grid {
+  display: grid;
+  gap: 2.5rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .fh-footer__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 1024px) {
+  .fh-footer__grid {
+    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+  }
+}
+
+/* ── Brand column ───────────────────────────────────────── */
+.fh-footer__brand-name {
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5rem;
+}
+
+.fh-footer__brand-name span {
+  color: #f97316;
+}
+
+.fh-footer__brand-desc {
+  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.85rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0.5rem 0 0;
+  max-width: 22rem;
+}
+
+/* ── Link columns ───────────────────────────────────────── */
+.fh-footer__col-title {
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0 0 1rem;
+}
+
+.fh-footer__links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.fh-footer__link {
+  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.55);
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.fh-footer__link:hover {
+  color: #f97316;
+}
+
+.fh-footer__link:focus-visible {
+  outline: 1px solid #f97316;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ── Bottom bar ─────────────────────────────────────────── */
+.fh-footer__bottom {
+  margin-top: 3rem;
+  padding: 1.25rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fh-footer__copy {
+  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0;
+}
+
+.fh-footer__copy span {
+  color: rgba(249, 115, 22, 0.7);
+}
