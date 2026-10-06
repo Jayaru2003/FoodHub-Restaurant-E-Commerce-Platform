@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import './Navbar.css';
 
 /* ── nav items config ──────────────────────────────────── */
@@ -66,8 +67,9 @@ export default function Navbar() {
   const searchInputRef = useRef(null);
   const navigate       = useNavigate();
 
-  // Cart count from context (stub — replace with real data later)
+  // Cart count from context
   const { cartCount } = useCart();
+  const { isAuthenticated, user, logout } = useAuth();
   const [badgeBump, setBadgeBump] = useState(false);
 
   useEffect(() => {
@@ -228,14 +230,29 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Sign In */}
-            <Link
-              to="/login"
-              className="fh-signin"
-              aria-label="Sign in to your account"
-            >
-              Sign In <IconArrow />
-            </Link>
+            {/* Account / Sign In */}
+            {isAuthenticated ? (
+              <div className="fh-user-menu flex items-center gap-2">
+                <span className="text-sm font-semibold text-slate-800">
+                  👤 {user?.name ? user.name.split(' ')[0] : 'Account'}
+                </span>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="fh-signin"
+                aria-label="Sign in to your account"
+              >
+                Sign In <IconArrow />
+              </Link>
+            )}
           </div>
 
           {/* ── Mobile hamburger ──────────────────────────── */}
@@ -336,15 +353,29 @@ export default function Navbar() {
             )}
           </Link>
 
-          {/* Mobile Sign In */}
-          <Link
-            to="/login"
-            className="fh-drawer__signin"
-            onClick={closeMobileMenu}
-            aria-label="Sign in to your account"
-          >
-            Sign In <IconArrow />
-          </Link>
+          {/* Mobile Sign In / Logout */}
+          {isAuthenticated ? (
+            <button
+              type="button"
+              className="fh-drawer__signin"
+              style={{ background: '#f1f5f9', color: '#334155' }}
+              onClick={() => {
+                logout();
+                closeMobileMenu();
+              }}
+            >
+              Logout ({user?.name ? user.name.split(' ')[0] : 'User'})
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              className="fh-drawer__signin"
+              onClick={closeMobileMenu}
+              aria-label="Sign in to your account"
+            >
+              Sign In <IconArrow />
+            </Link>
+          )}
         </div>
       </nav>
     </>
