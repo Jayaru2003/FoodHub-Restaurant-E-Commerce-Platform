@@ -1,42 +1,183 @@
-import { useCallback, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { getProducts } from '../services/productService';
-import useAsync from '../hooks/useAsync';
-import ProductCard from '../components/ProductCard';
-import LoadingState from '../components/LoadingState';
-import ErrorState from '../components/ErrorState';
+import ProductGrid from '../components/ProductGrid';
+import ProductFilters from '../components/ProductFilters';
+import Pagination from '../components/Pagination';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorMessage from '../components/ErrorMessage';
+import EmptyState from '../components/EmptyState';
 
 export default function ProductsPage() {
-  const [search, setSearch] = useState('');
-  const loadProducts = useCallback(() => getProducts(search ? { search } : {}), [search]);
-  const { data, isLoading, error, retry } = useAsync(loadProducts, { content: [] });
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  function handleSearch(event) {
-    event.preventDefault();
-    retry();
-  }
+  // Extract query parameters from URL with defaults
+  const page = parseInt(searchParams.get('page') || '0', 10);
+  const size = parseInt(searchParams.get('size') || '12', 10);
+  const searchParam = searchParams.get('search') || '';
+  const categoryIdParam = searchParams.get('categoryId') || '';
+  const availableParam = searchParams.get('available') || '';
+  const sortByParam = searchParams.get('sortBy') || 'name';
+  const directionParam = searchParams.get('direction') || 'asc';
 
-  const products = data?.content || [];
+  // Local state for immediate typing response in search box
+  const [searchInput, setSearchInput] = useState(searchParam);
+
+  // Sync searchInput when URL search parameter changes externally
+  useEffect(() => {
+    setSearchInput(searchParam);
+  }, [searchParam]);
+
+  // Data fetching state
+  const [pageData, setPageData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Function to update URL search parameters helper
+  const updateParams = useCallback((newParams) => {
+    setSearchParams((prev) => {
+      const updated = new URLSearchParams(prev);
+      Object.keys(newParams).forEach((key) => {
+        const val = newParams[key];
+        if (val === undefined || val === null || val === '') {
+          updated.delete(key);
+        } else {
+          updated.set(key, String(val));
+        }
+      });
+      return updated;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  // Debounced search effect
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      if (searchInput !== searchParam) {
+        updateParams({ search: searchInput, page: 0 });
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchInput, searchParam, updateParams]);
+
+  // Fetch products from backend when query params change
+  const fetchProducts = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const params = {
+        page,
+        size,
+        search: searchParam,
+        categoryId: categoryIdParam,
+        available: availableParam,
+        sortBy: sortByParam,
+        direction: directionParam
+      };
+
+      const data = await getProducts(params);
+      setPageData(data);
+    } catch (err) {
+      // Do not expose stack traces or backend internals
+      setError('We were unable to load the menu right now. Please verify your connection or try again later.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [page, size, searchParam, categoryIdParam, availableParam, sortByParam, directionParam]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  // Handler functions for filter changes
+  const handleCategoryChange = (catId) => {
+    updateParams({ categoryId: catId, page: 0 });
+  };
+
+  const handleAvailableChange = (availVal) => {
+    updateParams({ available: availVal, page: 0 });
+  };
+
+  const handleSortChange = ({ sortBy, direction }) => {
+    updateParams({ sortBy, direction, page: 0 });
+  };
+
+  const handlePageChange = (newPage) => {
+    updateParams({ page: newPage });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    updateParams({ size: newSize, page: 0 });
+  };
+
+  const handleResetFilters = () => {
+    setSearchInput('');
+    setSearchParams(new URLSearchParams(), { replace: true });
+  };
+
+  const products = pageData?.content || [];
+  const totalPages = pageData?.totalPages || 0;
+  const totalElements = pageData?.totalElements || 0;
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-        <div>
-          <p className="font-bold uppercase tracking-[0.2em] text-brand-600">Our menu</p>
-          <h1 className="mt-3 text-4xl font-extrabold text-ink">Find your next favourite</h1>
-          <p className="mt-3 max-w-xl text-slate-500">Browse the dishes currently available from the FoodHub kitchen.</p>
+    <div className="bg-slate-50/50 min-h-screen py-10">
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Header section */}
+        <div className="mb-8">
+          <p className="font-bold uppercase tracking-[0.2em] text-brand-600">Explore Our Menu</p>
+          <h1 className="mt-2 text-3xl font-extrabold text-slate-900 sm:text-4xl lg:text-5xl">
+            Delicious Food Delivered To You
+          </h1>
+          <p className="mt-3 max-w-2xl text-base text-slate-600">
+            Browse our wide selection of freshly prepared dishes. Filter by category, availability, or price to find your perfect meal.
+          </p>
         </div>
-        <form onSubmit={handleSearch} className="flex w-full max-w-md gap-2">
-          <label htmlFor="product-search" className="sr-only">Search menu</label>
-          <input id="product-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search the menu..." className="min-w-0 flex-1 rounded-2xl border border-orange-100 bg-white px-4 py-3 text-sm outline-none ring-brand-200 focus:ring-2" />
-          <button className="rounded-2xl bg-brand-600 px-5 py-3 text-sm font-bold text-white hover:bg-brand-700">Search</button>
-        </form>
-      </div>
-      <div className="mt-10">
-        {isLoading && <LoadingState />}
-        {error && <ErrorState message="We could not load the menu. Check that the Spring Boot API is running." onRetry={retry} />}
-        {!isLoading && !error && products.length === 0 && <div className="rounded-3xl bg-white p-12 text-center text-slate-500 shadow-soft">No dishes found.</div>}
-        {!isLoading && !error && products.length > 0 && <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{products.map((product) => <ProductCard key={product.id} product={product} />)}</div>}
-      </div>
-    </section>
+
+        {/* Filter Controls */}
+        <div className="mb-8">
+          <ProductFilters
+            search={searchInput}
+            onSearchChange={setSearchInput}
+            categoryId={categoryIdParam}
+            onCategoryChange={handleCategoryChange}
+            available={availableParam}
+            onAvailableChange={handleAvailableChange}
+            sortBy={sortByParam}
+            direction={directionParam}
+            onSortChange={handleSortChange}
+            onReset={handleResetFilters}
+          />
+        </div>
+
+        {/* Dynamic Content States */}
+        {isLoading ? (
+          <LoadingSpinner label="Fetching fresh products from FoodHub..." />
+        ) : error ? (
+          <ErrorMessage message={error} onRetry={fetchProducts} />
+        ) : products.length === 0 ? (
+          <EmptyState onReset={handleResetFilters} />
+        ) : (
+          <>
+            <ProductGrid products={products} />
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              totalElements={totalElements}
+              size={size}
+              onPageChange={handlePageChange}
+              onSizeChange={handlePageSizeChange}
+            />
+          </>
+        )}
+      </section>
+    </div>
   );
 }

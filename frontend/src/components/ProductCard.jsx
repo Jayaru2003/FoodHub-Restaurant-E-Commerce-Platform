@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ProductCard.css';
 import { useCart } from '../context/CartContext';
@@ -38,16 +39,19 @@ export default function ProductCard({ product }) {
     navigate(`/products/${product.id}`);
   };
 
+  const [imgError, setImgError] = useState(false);
+
   return (
     <article className="fh-product-card group">
       {/* Image */}
       <div className="fh-product-card__img-wrap">
-        {product.imageUrl ? (
+        {product.imageUrl && !imgError ? (
           <img
             src={product.imageUrl}
             alt={product.name}
             className="fh-product-card__img"
             loading="lazy"
+            onError={() => setImgError(true)}
           />
         ) : (
           <div className="fh-product-card__img-placeholder" aria-hidden="true">🍽️</div>
