@@ -2,6 +2,8 @@
 
 FoodHub is a restaurant ordering platform intended to support product browsing, customer accounts, delivery addresses, order management, inventory tracking, and restaurant administration. The repository currently contains the Spring Boot backend domain model and PostgreSQL configuration. The frontend source and API/controller layers are not yet included in this checkout, so the implementation status is documented explicitly below.
 
+🔗 **Frontend:** https://food-hub-restaurant-e-commerce-plat.vercel.app
+
 > [!IMPORTANT]
 > **Admin account:** `admin@gmail.com`
 >
