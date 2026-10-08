@@ -3,6 +3,7 @@
 FoodHub is a modern, full-stack responsive E-Commerce application built for restaurants and food ordering businesses. It features a customer-facing store for menu browsing, cart management, and multi-option checkout, along with a comprehensive Admin Panel for catalog, inventory, and order management.
 
 - **Live Application URL:** `https://food-hub-restaurant-e-commerce-plat.vercel.apphttps://food-hub-restaurant-e-commerce-plat.vercel.app`
+- **Backend URL:**https://foodhub-restaurant-e-commerce-platform.onrender.com
 ---
 
 > [!IMPORTANT]
@@ -11,6 +12,9 @@ FoodHub is a modern, full-stack responsive E-Commerce application built for rest
 > - **Password:** `admin123`
 
 ---
+**Frontend Hosting:** Vercel
+**Backend Hosting:** Render
+**Database:** Supabase PostgreSQL
 
 ## 🌟 Key Features
 
@@ -96,7 +100,7 @@ FoodHub is a modern, full-stack responsive E-Commerce application built for rest
 
 ### Prerequisites
 - **JDK 17** or **JDK 21**
-- **Node.js 18+** and **npm**
+- **springboot 18+** and **npm**
 - **Maven 3.8+**
 - **PostgreSQL 14+** (or local PostgreSQL server)
 
